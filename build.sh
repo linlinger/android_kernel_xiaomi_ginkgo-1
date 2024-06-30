@@ -50,10 +50,6 @@ exit 1
 fi
 fi
 
-echo -e "\nCleanup Kernel Source first for Android 12-14\n"
-git restore arch/arm64/configs/vendor/ginkgo-perf_defconfig
-rm -rf out
-
 if [[ $1 = "-k" || $1 = "--ksu" ]]; then
 	echo -e "\nCleanup KernelSU first on local build\n"
 	rm -rf KernelSU drivers/kernelsu
