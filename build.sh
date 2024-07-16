@@ -11,13 +11,14 @@
 # Use this script on root of kernel directory
 
 SECONDS=0 # builtin bash timer
+LOCAL_DIR=/home/ryuzenn/
 ZIPNAME="RyzenKernel-AOSP-Dynamic-Ginkgo-$(TZ=Asia/Jakarta date +"%Y%m%d-%H%M").zip"
 ZIPNAME_KSU="RyzenKernel-AOSP-Dynamic-Ginkgo-KSU-$(TZ=Asia/Jakarta date +"%Y%m%d-%H%M").zip"
-TC_DIR="/workspace/toolchain/linux-x86"
-CLANG_DIR="/workspace/toolchain/linux-x86/clang-r498229b"
-GCC_64_DIR="/workspace/toolchain/aarch64-linux-android-4.9"
-GCC_32_DIR="/workspace/toolchain/arm-linux-androideabi-4.9"
-AK3_DIR="/workspace/AnyKernel3"
+TC_DIR="${LOCAL_DIR}toolchain/linux-x86"
+CLANG_DIR="${TC_DIR}/clang-r498229b"
+GCC_64_DIR="${LOCAL_DIR}toolchain/aarch64-linux-android-4.9"
+GCC_32_DIR="${LOCAL_DIR}toolchain/arm-linux-androideabi-4.9"
+AK3_DIR="${LOCAL_DIR}AnyKernel3"
 DEFCONFIG="vendor/ginkgo-perf_defconfig"
 
 export PATH="$CLANG_DIR/bin:$PATH"
@@ -46,7 +47,6 @@ if ! [ -d "${GCC_32_DIR}" ]; then
 echo "gcc_32 not found! Cloning to ${GCC_32_DIR}..."
 if ! git clone --depth=1 -b lineage-19.1 https://github.com/LineageOS/android_prebuilts_gcc_linux-x86_arm_arm-linux-androideabi-4.9.git ${GCC_32_DIR}; then
 echo "Cloning failed! Aborting..."
-exit 1
 fi
 fi
 
@@ -78,7 +78,7 @@ echo -e "\nKernel compiled succesfully! Zipping up...\n"
 git restore arch/arm64/configs/vendor/ginkgo-perf_defconfig
 if [ -d "$AK3_DIR" ]; then
 cp -r $AK3_DIR AnyKernel3
-elif ! git clone -q -b dynamic https://github.com/kutemeikito/AnyKernel3; then
+elif ! git clone -b dynamic https://github.com/kutemeikito/AnyKernel3; then
 echo -e "\nAnyKernel3 repo not found locally and cloning failed! Aborting..."
 exit 1
 fi
@@ -86,7 +86,7 @@ cp out/arch/arm64/boot/Image.gz-dtb AnyKernel3
 cp out/arch/arm64/boot/dtbo.img AnyKernel3
 rm -f *zip
 cd AnyKernel3
-git checkout master &> /dev/null
+git checkout dynamic &> /dev/null
 if [[ $1 = "-k" || $1 = "--ksu" ]]; then
 zip -r9 "../$ZIPNAME_KSU" * -x '*.git*' README.md *placeholder
 else
@@ -95,7 +95,16 @@ fi
 cd ..
 rm -rf AnyKernel3
 rm -rf out/arch/arm64/boot
-echo -e "\nCompleted in $((SECONDS / 60)) minute(s) and $((SECONDS % 60)) second(s) !"
+echo -e "======================================="
+echo -e "░█▀▀█ █──█ ▀▀█ █▀▀ █▀▀▄ "
+echo -e "░█▄▄▀ █▄▄█ ▄▀─ █▀▀ █──█ "
+echo -e "░█─░█ ▄▄▄█ ▀▀▀ ▀▀▀ ▀──▀ "
+echo -e " "
+echo -e "░█─▄▀ █▀▀ █▀▀█ █▀▀▄ █▀▀ █── "
+echo -e "░█▀▄─ █▀▀ █▄▄▀ █──█ █▀▀ █── "
+echo -e "░█─░█ ▀▀▀ ▀─▀▀ ▀──▀ ▀▀▀ ▀▀▀ "
+echo -e "======================================="
+echo -e "Completed in $((SECONDS / 60)) minute(s) and $((SECONDS % 60)) second(s) !"
 if [[ $1 = "-k" || $1 = "--ksu" ]]; then
 echo "Zip: $ZIPNAME_KSU"
 else
@@ -106,4 +115,5 @@ echo -e "\nCompilation failed!"
 exit 1
 fi
 echo "Move Zip into Home Directory"
-mv *.zip /workspace
+mv *.zip ${LOCAL_DIR}
+echo -e "======================================="
