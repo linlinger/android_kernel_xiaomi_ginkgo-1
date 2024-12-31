@@ -135,4 +135,5 @@ exit 1
 fi
 echo "Move Zip into Home Directory"
 mv *.zip ${LOCAL_DIR}
+git restore .
 echo -e "======================================="
