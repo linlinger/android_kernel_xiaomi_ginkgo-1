@@ -2226,6 +2226,11 @@ seqretry:
 				continue;
 			if (dentry_cmp(dentry, str, hashlen_len(hashlen)) != 0)
 				continue;
+#ifdef CONFIG_KSU_SUSFS_SUS_PATH
+			if (dentry->d_inode && unlikely(dentry->d_inode->i_state & 16777216) && likely(current_cred()->user->android_kabi_reserved2 & 16777216)) {
+				continue;
+			}
+#endif
 		}
 		*seqp = seq;
 		return dentry;
@@ -2308,6 +2313,12 @@ struct dentry *__d_lookup(const struct dentry *parent, const struct qstr *name)
 
 		if (dentry->d_name.hash != hash)
 			continue;
+
+#ifdef CONFIG_KSU_SUSFS_SUS_PATH
+		if (dentry->d_inode && unlikely(dentry->d_inode->i_state & 16777216) && likely(current_cred()->user->android_kabi_reserved2 & 16777216)) {
+			continue;
+		}
+#endif
 
 		spin_lock(&dentry->d_lock);
 		if (dentry->d_parent != parent)
@@ -3101,12 +3112,7 @@ static int prepend_name(char **buffer, int *buflen, const struct qstr *name)
 		return -ENAMETOOLONG;
 	p = *buffer -= dlen + 1;
 	*p++ = '/';
-	while (dlen--) {
-		char c = *dname++;
-		if (!c)
-			break;
-		*p++ = c;
-	}
+	memcpy(p, dname, dlen);
 	return 0;
 }
 
@@ -3309,9 +3315,9 @@ static void get_fs_root_rcu(struct fs_struct *fs, struct path *root)
  *
  * "buflen" should be positive.
  */
-char *d_path(const struct path *path, char *buf, int buflen)
+char *d_path_outlen(const struct path *path, char *buf, int *buflen)
 {
-	char *res = buf + buflen;
+	char *res = buf + *buflen;
 	struct path root;
 	int error;
 
@@ -3328,16 +3334,21 @@ char *d_path(const struct path *path, char *buf, int buflen)
 	 */
 	if (path->dentry->d_op && path->dentry->d_op->d_dname &&
 	    (!IS_ROOT(path->dentry) || path->dentry != path->mnt->mnt_root))
-		return path->dentry->d_op->d_dname(path->dentry, buf, buflen);
+		return path->dentry->d_op->d_dname(path->dentry, buf, *buflen);
 
 	rcu_read_lock();
 	get_fs_root_rcu(current->fs, &root);
-	error = path_with_deleted(path, &root, &res, &buflen);
+	error = path_with_deleted(path, &root, &res, buflen);
 	rcu_read_unlock();
 
 	if (error < 0)
 		res = ERR_PTR(error);
 	return res;
+}
+
+char *d_path(const struct path *path, char *buf, int buflen)
+{
+	return d_path_outlen(path, buf, &buflen);
 }
 EXPORT_SYMBOL(d_path);
 
